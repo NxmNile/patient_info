@@ -9,6 +9,15 @@ export default function PatientFormPage() {
   const sessionIdRef = useRef<string>(Date.now().toString() + '-' + Math.random().toString(36).slice(2,8));
   const activityTimeoutRef = useRef<number | null>(null);
   const activityDebounceRef = useRef<number | null>(null);
+  const createSessionId = () => Date.now().toString() + '-' + Math.random().toString(36).slice(2,8);
+
+  const resetSessionTracking = () => {
+    sessionIdRef.current = createSessionId();
+    if (activityTimeoutRef.current) window.clearTimeout(activityTimeoutRef.current);
+    if (activityDebounceRef.current) window.clearTimeout(activityDebounceRef.current);
+    activityTimeoutRef.current = null;
+    activityDebounceRef.current = null;
+  };
 
   const [form, setForm] = useState({
     firstName: "",
@@ -36,17 +45,25 @@ export default function PatientFormPage() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // emit to socket server (if available)
-    socketRef.current?.emit("new-patient", form);
+    const sessionId = sessionIdRef.current;
 
-    // Build patient record with timestamp and id
     const patient = {
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
+      sessionId,
       ...form,
     };
 
-    // Persist to localStorage for admin view (frontend-only fallback)
+    socketRef.current?.emit("new-patient", patient);
+    try {
+      socketRef.current?.emit("form-submitted", {
+        sessionId,
+        patientId: patient.id,
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        timestamp: Date.now(),
+      });
+    } catch {}
+
     try {
       const raw = localStorage.getItem("patients");
       const arr = raw ? JSON.parse(raw) : [];
@@ -57,9 +74,6 @@ export default function PatientFormPage() {
     }
 
     setSubmitted(true);
-
-    // show confirmation and reset form
-    // (we could keep the form populated if desired)
     setForm({
       firstName: "",
       middleName: "",
@@ -76,14 +90,14 @@ export default function PatientFormPage() {
       emergencyPhone: "",
       religion: "",
     });
-    // after a submit, mark this session as inactive (finished)
+    // after a submit
     try {
       socketRef.current?.emit("form-inactive", { sessionId: sessionIdRef.current, timestamp: Date.now() });
     } catch {}
   };
 
   useEffect(() => {
-    // connect to socket.io on mount — explicit URL for a dedicated socket server
+   
     try {
       // change this URL if your socket server runs elsewhere
       socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
@@ -112,10 +126,10 @@ export default function PatientFormPage() {
     };
   }, []);
 
-  // notify active (debounced) and set inactivity timer
+  // notify active
   function notifyActive() {
     if (!socketRef.current) return;
-    // debounce to avoid spamming
+    //avoid spamming
     if (activityDebounceRef.current) window.clearTimeout(activityDebounceRef.current);
     activityDebounceRef.current = window.setTimeout(() => {
       try {
@@ -127,20 +141,20 @@ export default function PatientFormPage() {
       } catch (err) {}
     }, 300);
 
-    // reset inactivity timer
+    
     if (activityTimeoutRef.current) window.clearTimeout(activityTimeoutRef.current);
     activityTimeoutRef.current = window.setTimeout(() => {
       try {
         socketRef.current?.emit("form-inactive", { sessionId: sessionIdRef.current, timestamp: Date.now() });
       } catch (err) {}
-    }, 20000); // 20s inactivity -> inactive
+    }, 20000); // 20s -> inactive
   }
 
   return (
     <main className="min-h-screen bg-sky-50 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col items-center relative">
       <a
         href="/login"
-        className="absolute top-5 right-5 px-4 py-2 bg-white text-sky-600 rounded-lg shadow hover:bg-sky-100 transition"
+        className="absolute top-5 right-5 px-4 py-2 font-bold bg-white text-blue-700 rounded-lg shadow hover:bg-sky-100 transition"
       >
         Admin Login
       </a>
@@ -148,7 +162,7 @@ export default function PatientFormPage() {
       {/* Form Card */}
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 mt-8 sm:mt-10 mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold text-sky-700">
+          <h1 className="text-2xl md:text-3xl font-semibold text-blue-700">
             Patient Information Form
           </h1>
           <p className="text-slate-500 mt-1">
@@ -238,8 +252,8 @@ export default function PatientFormPage() {
               value={form.language}
               onChange={handleChange}
               options={[
-                { value: "en", label: "English", flag: "uk" },
-                { value: "th", label: "Thai", flag: "th" },
+                { value: "English", label: "English", flag: "uk" },
+                { value: "Thai", label: "Thai", flag: "th" },
               ]}
             />
             <InputBlock
@@ -289,7 +303,7 @@ export default function PatientFormPage() {
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              className="w-full md:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-sky-600 text-white text-sm sm:text-sm font-medium hover:bg-sky-700 transition-colors shadow-sm"
+              className="w-full md:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gradient-to-b from-sky-400 to-blue-700 text-white text-sm sm:text-sm font-medium hover:bg-sky-800 transition-colors shadow-sm"
             >
               Submit
             </button>
@@ -306,19 +320,25 @@ export default function PatientFormPage() {
                 Patient data has been submitted. Do you want to submit another?
               </p>
 
-              <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full">
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50 text-center"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-lg bg-sky-600 text-sm text-white hover:bg-sky-700 text-center"
-                >
-                  Submit another
-                </button>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full">
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  resetSessionTracking();
+                }}
+                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50 text-center"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  resetSessionTracking();
+                }}
+                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-lg bg-sky-600 text-sm text-white hover:bg-sky-700 text-center"
+              >
+                Submit another
+              </button>
               </div>
             </div>
           </div>

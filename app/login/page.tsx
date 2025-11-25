@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen bg-sky-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 md:p-8">
-        <h1 className="text-2xl font-semibold text-sky-700 mb-2">
+        <h1 className="text-2xl font-semibold text-blue-700 mb-2">
           Admin Login
         </h1>
         <p className="text-sm text-slate-500 mb-6">
@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            className="w-full mt-2 py-2.5 rounded-lg bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 transition-colors shadow-sm"
+            className="w-full mt-2 py-2.5 rounded-lg bg-gradient-to-b from-sky-400 to-blue-800 text-white text-sm font-medium hover:bg-sky-800 transition-colors shadow-sm"
           >
             Login
           </button>

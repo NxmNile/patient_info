@@ -39,6 +39,13 @@ io.on('connection', (socket) => {
     io.emit('form-inactive', payload);
   });
 
+  socket.on('form-submitted', (payload) => {
+    try {
+      if (payload && payload.sessionId) socketSessionMap.set(socket.id, payload.sessionId);
+    } catch (e) {}
+    io.emit('form-submitted', payload);
+  });
+
   socket.on('form-left', (payload) => {
     try {
       if (payload && payload.sessionId) socketSessionMap.set(socket.id, payload.sessionId);

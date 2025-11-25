@@ -21,7 +21,6 @@ export default function AdminPage() {
     if (flag === "true") {
       setIsAdmin(true);
     } else {
-      // Not logged in as admin — send to login
       router.push("/login");
     }
   }, [router]);
@@ -53,7 +52,6 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    // Connect to socket server to receive live updates
     try {
       socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
         transports: ["websocket", "polling"],
@@ -92,6 +90,22 @@ export default function AdminPage() {
           }
           return updated;
         });
+
+        if (data.sessionId) {
+          const now = Date.now();
+          setSessions((prev) => {
+            const existing = prev.find((s) => s.sessionId === data.sessionId);
+            const name = `${data.firstName || ""} ${data.lastName || ""}`.trim();
+            if (existing) {
+              return prev.map((s) =>
+                s.sessionId === data.sessionId
+                  ? { ...s, status: "submitted", patientId: data.id, patientName: name || s.patientName, lastActive: now }
+                  : s
+              );
+            }
+            return [{ sessionId: data.sessionId, status: "submitted", patientId: data.id, patientName: name, lastActive: now }, ...prev];
+          });
+        }
       });
 
       socketRef.current.on("form-active", (payload: any) => {
@@ -100,15 +114,42 @@ export default function AdminPage() {
           const found = prev.find((s) => s.sessionId === payload.sessionId);
           const now = Date.now();
           if (found) {
-            return prev.map((s) => (s.sessionId === payload.sessionId ? { ...s, partial: payload.partial, lastActive: now, status: "active" } : s));
+            return prev.map((s) =>
+              s.sessionId === payload.sessionId
+                ? { ...s, partial: payload.partial, lastActive: now, status: s.status === "submitted" ? "submitted" : "active" }
+                : s
+            );
           }
           return [{ sessionId: payload.sessionId, partial: payload.partial, lastActive: now, status: "active" }, ...prev];
         });
       });
 
+      socketRef.current.on("form-submitted", (payload: any) => {
+        if (!payload || !payload.sessionId) return;
+        const now = payload.timestamp || Date.now();
+        setSessions((prev) => {
+          const existing = prev.find((s) => s.sessionId === payload.sessionId);
+          const name = (payload.name || "").trim();
+          if (existing) {
+            return prev.map((s) =>
+              s.sessionId === payload.sessionId
+                ? { ...s, status: "submitted", lastActive: now, patientId: payload.patientId || s.patientId, patientName: name || s.patientName }
+                : s
+            );
+          }
+          return [{ sessionId: payload.sessionId, status: "submitted", patientId: payload.patientId, patientName: name, lastActive: now }, ...prev];
+        });
+      });
+
       socketRef.current.on("form-inactive", (payload: any) => {
         if (!payload || !payload.sessionId) return;
-        setSessions((prev) => prev.map((s) => (s.sessionId === payload.sessionId ? { ...s, status: "inactive", lastActive: payload.timestamp || Date.now() } : s)));
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.sessionId !== payload.sessionId) return s;
+            if (s.status === "submitted") return s;
+            return { ...s, status: "inactive", lastActive: payload.timestamp || Date.now() };
+          })
+        );
       });
 
       socketRef.current.on("form-left", (payload: any) => {
@@ -135,6 +176,7 @@ export default function AdminPage() {
     const iv = setInterval(() => {
       const now = Date.now();
       setSessions((prev) => prev.map((s) => {
+        if (s.status === "submitted") return s;
         if (s.status === 'active' && now - (s.lastActive || 0) > 30000) return { ...s, status: 'inactive' };
         return s;
       }));
@@ -178,18 +220,31 @@ export default function AdminPage() {
 
         {sessions.length > 0 && (
           <div className="mb-4">
-            <div className="text-sm font-medium text-slate-700 mb-2">Active Forms</div>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="text-sm font-medium text-slate-700">Form Status</div>
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Active</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" /> Submitted</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Inactive</span>
+              </div>
+            </div>
             <div className="flex gap-2 flex-wrap">
               {sessions.map((s) => {
                 const age = Date.now() - (s.lastActive || 0);
                 const isActive = s.status === 'active' && age <= 30000;
-                const color = isActive ? 'bg-emerald-400' : (s.status === 'inactive' ? 'bg-amber-400' : 'bg-slate-300');
-                const name = (s.partial && (s.partial.firstName || s.partial.lastName)) ? `${s.partial.firstName || ''} ${s.partial.lastName || ''}`.trim() : 'Filling...';
+                const status = s.status === "submitted" ? "submitted" : (isActive ? "active" : "inactive");
+                const colorMap: Record<string, string> = { active: "bg-emerald-500", submitted: "bg-indigo-500", inactive: "bg-amber-400" };
+                const color = colorMap[status] || "bg-slate-300";
+                const name =
+                  s.patientName ||
+                  (s.partial && (s.partial.firstName || s.partial.lastName)
+                    ? `${s.partial.firstName || ""} ${s.partial.lastName || ""}`.trim()
+                    : "Filling...");
                 return (
                   <div key={s.sessionId} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border">
                     <span className={`inline-block w-2 h-2 rounded-full ${color}`} aria-hidden />
                     <div className="text-sm text-slate-700">{name}</div>
-                    <div className="text-xs text-slate-400">{isActive ? 'active' : s.status}</div>
+                    <div className="text-xs text-slate-400 capitalize">{status}</div>
                   </div>
                 );
               })}
@@ -223,9 +278,15 @@ export default function AdminPage() {
           {filtered.length === 0 ? (
             <p className="text-sm text-slate-500">No patients found.</p>
           ) : (
-            filtered.map((p) => (
+            filtered.map((p, idx) => (
               <button
-                key={p.id}
+                key={
+                  p.id
+                    ? p.id
+                    : p.sessionId
+                    ? `session-${p.sessionId}-${idx}`
+                    : `${p.createdAt || "patient"}-${idx}`
+                }
                 type="button"
                 onClick={() => setSelectedPatient(p)}
                 onKeyDown={(e) => {
