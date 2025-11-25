@@ -254,7 +254,7 @@ export default function AdminPage() {
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-slate-700 mb-2">Search by Name</label>
-          <div className="relative w-full md:w-1/2">
+          <div className="relative w-full md:w-full">
             <input
               ref={inputRef}
               type="text"
