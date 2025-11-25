@@ -6,6 +6,9 @@ import { io, Socket } from "socket.io-client";
 export default function PatientFormPage() {
   const socketRef = useRef<Socket | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const sessionIdRef = useRef<string>(Date.now().toString() + '-' + Math.random().toString(36).slice(2,8));
+  const activityTimeoutRef = useRef<number | null>(null);
+  const activityDebounceRef = useRef<number | null>(null);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -28,12 +31,30 @@ export default function PatientFormPage() {
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    notifyActive();
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     // emit to socket server (if available)
     socketRef.current?.emit("new-patient", form);
+
+    // Build patient record with timestamp and id
+    const patient = {
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      ...form,
+    };
+
+    // Persist to localStorage for admin view (frontend-only fallback)
+    try {
+      const raw = localStorage.getItem("patients");
+      const arr = raw ? JSON.parse(raw) : [];
+      arr.push(patient);
+      localStorage.setItem("patients", JSON.stringify(arr));
+    } catch (err) {
+      console.warn("Failed to persist patient locally:", err);
+    }
 
     setSubmitted(true);
 
@@ -55,21 +76,65 @@ export default function PatientFormPage() {
       emergencyPhone: "",
       religion: "",
     });
+    // after a submit, mark this session as inactive (finished)
+    try {
+      socketRef.current?.emit("form-inactive", { sessionId: sessionIdRef.current, timestamp: Date.now() });
+    } catch {}
   };
 
   useEffect(() => {
-    // connect to socket.io on mount
+    // connect to socket.io on mount — explicit URL for a dedicated socket server
     try {
-      socketRef.current = io();
+      // change this URL if your socket server runs elsewhere
+      socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
+        transports: ["websocket", "polling"],
+        reconnectionAttempts: 5,
+      });
+      socketRef.current.on("connect_error", (err) => {
+        console.warn("socket connect_error:", err);
+      });
     } catch (err) {
       console.warn("socket.io connection failed:", err);
       socketRef.current = null;
     }
 
+    const onBeforeUnload = () => {
+      try {
+        socketRef.current?.emit("form-inactive", { sessionId: sessionIdRef.current, timestamp: Date.now() });
+      } catch {}
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+
     return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
       socketRef.current?.disconnect();
     };
   }, []);
+
+  // notify active (debounced) and set inactivity timer
+  function notifyActive() {
+    if (!socketRef.current) return;
+    // debounce to avoid spamming
+    if (activityDebounceRef.current) window.clearTimeout(activityDebounceRef.current);
+    activityDebounceRef.current = window.setTimeout(() => {
+      try {
+        socketRef.current?.emit("form-active", {
+          sessionId: sessionIdRef.current,
+          partial: { firstName: form.firstName, middleName: form.middleName, lastName: form.lastName },
+          timestamp: Date.now(),
+        });
+      } catch (err) {}
+    }, 300);
+
+    // reset inactivity timer
+    if (activityTimeoutRef.current) window.clearTimeout(activityTimeoutRef.current);
+    activityTimeoutRef.current = window.setTimeout(() => {
+      try {
+        socketRef.current?.emit("form-inactive", { sessionId: sessionIdRef.current, timestamp: Date.now() });
+      } catch (err) {}
+    }, 20000); // 20s inactivity -> inactive
+  }
 
   return (
     <main className="min-h-screen bg-sky-50 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col items-center relative">
