@@ -72,7 +72,7 @@ export default function PatientFormPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-sky-50 px-4 py-10 flex flex-col items-center relative">
+    <main className="min-h-screen bg-sky-50 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col items-center relative">
       <a
         href="/login"
         className="absolute top-5 right-5 px-4 py-2 bg-white text-sky-600 rounded-lg shadow hover:bg-sky-100 transition"
@@ -81,7 +81,7 @@ export default function PatientFormPage() {
       </a>
 
       {/* Form Card */}
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-6 md:p-8 mt-10">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 mt-8 sm:mt-10 mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-semibold text-sky-700">
             Patient Information Form
@@ -91,9 +91,9 @@ export default function PatientFormPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6 md:space-y-5">
           {/* Name section */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             <InputBlock
               label="First Name"
               required
@@ -117,7 +117,7 @@ export default function PatientFormPage() {
           </div>
 
           {/* DOB + Gender */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <InputBlock
               label="Date of Birth"
               type="date"
@@ -137,7 +137,7 @@ export default function PatientFormPage() {
           </div>
 
           {/* Phone + Email */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <InputBlock
               label="Phone Number"
               required
@@ -165,7 +165,7 @@ export default function PatientFormPage() {
           />
 
           {/* Language + Nationality */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <SelectBlock
               label="Preferred Language"
               required
@@ -187,7 +187,7 @@ export default function PatientFormPage() {
           </div>
 
           {/* Emergency */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div className="flex flex-col gap-3">
               <InputBlock
                 label="Emergency Contact Name (optional)"
@@ -224,7 +224,7 @@ export default function PatientFormPage() {
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              className="w-full md:w-auto px-6 py-2.5 rounded-lg bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 transition-colors shadow-sm"
+              className="w-full md:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-sky-600 text-white text-sm sm:text-sm font-medium hover:bg-sky-700 transition-colors shadow-sm"
             >
               Submit
             </button>
@@ -233,7 +233,7 @@ export default function PatientFormPage() {
         {/* Popup modal shown after submit */}
         {submitted && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-2xl shadow-xl max-w-sm md:max-w-md w-full mx-4 p-6">
+            <div className="bg-white rounded-2xl shadow-xl max-w-sm md:max-w-lg w-full mx-4 p-6 sm:p-8">
               <h2 className="text-lg font-semibold text-slate-800 text-center">
                 Data submitted
               </h2>
@@ -244,13 +244,13 @@ export default function PatientFormPage() {
               <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full">
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="w-full sm:flex-1 px-4 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50 text-center"
+                  className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-lg border border-slate-300 text-sm text-slate-700 hover:bg-slate-50 text-center"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="w-full sm:flex-1 px-4 py-2 rounded-lg bg-sky-600 text-sm text-white hover:bg-sky-700 text-center"
+                  className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-lg bg-sky-600 text-sm text-white hover:bg-sky-700 text-center"
                 >
                   Submit another
                 </button>
@@ -273,18 +273,18 @@ function InputBlock({
 }: any) {
   return (
       <div className="flex flex-col">
-      <label className="text-sm font-bold text-slate-700">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        className="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-sky-400 w-full"
-      />
-    </div>
+          <label className="text-sm sm:text-base font-bold text-slate-700">
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={onChange}
+            required={required}
+            className="mt-1 rounded-lg border border-slate-300 px-3 py-3 sm:py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-sky-400 w-full"
+          />
+        </div>
   );
 }
 
