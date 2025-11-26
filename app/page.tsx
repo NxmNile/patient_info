@@ -4,7 +4,7 @@ import { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
 const SOCKET_URL =
-  "https://patient-info-backend.onrender.com";
+  (process.env.NEXT_PUBLIC_SOCKET_URL ?? "").trim() ;
 
 export default function PatientFormPage() {
   const socketRef = useRef<Socket | null>(null);
@@ -150,7 +150,7 @@ export default function PatientFormPage() {
       try {
         socketRef.current?.emit("form-inactive", { sessionId: sessionIdRef.current, timestamp: Date.now() });
       } catch (err) {}
-    }, 20000); // 20s -> inactive
+    }, 10000); // 10s -> inactive
   }
 
   return (
