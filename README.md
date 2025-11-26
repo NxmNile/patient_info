@@ -21,40 +21,11 @@ Hospital staff can access a dedicated dashboard to monitor real-time patient int
 - Table of submitted patient records with timestamps
 - Patient search by name for efficient navigation through records
 
-## How to Run the Project
+**For backend repository**
+- https://github.com/NxmNile/patient-info-backend
+- Deploy on Render
 
-### Prerequisites
-- Node.js and npm installed
-
-### Install Dependencies
-From the repo root, install packages:
-
-```bash
-npm install
-```
-
-### Start the Socket.IO Server
-By default the app points to the hosted socket server at `https://patient-info-backend.onrender.com`. You can override it with `NEXT_PUBLIC_SOCKET_URL` if you want to run your own:
-
-```bash
-NEXT_PUBLIC_SOCKET_URL=http://localhost:4000 npm run dev
-```
-
-If you need a local server, start it in another terminal:
-
-```bash
-npm run socket
-```
-
-### Start the Next.js App
-In another terminal (or the same one if you are only using the hosted socket server):
-
-```bash
-npm run dev
-```
-
-Open <http://localhost:3000> to view the app. Edits hot-reload automatically.
-
-**Admin login**
-- Username: `admin`
-- Password: `admin123`
+## How to run the project
+- open https://patient-info-theta.vercel.app/ 2 tabs
+- First tab for patient and second tabs for admin
+- For admin login, Username: admin Password: admin 123
