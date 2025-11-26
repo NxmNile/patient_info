@@ -4,6 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useRouter } from "next/navigation";
 import { CiSearch } from "react-icons/ci";
+
+const SOCKET_URL =
+  (process.env.NEXT_PUBLIC_SOCKET_URL ?? "").trim() || "https://patient-info-backend.onrender.com";
 export default function AdminPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -53,7 +56,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     try {
-      socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
+      socketRef.current = io(SOCKET_URL, {
         transports: ["websocket", "polling"],
       });
 

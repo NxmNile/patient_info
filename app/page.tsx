@@ -3,6 +3,9 @@
 import { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
+const SOCKET_URL =
+  (process.env.NEXT_PUBLIC_SOCKET_URL ?? "").trim() || "https://patient-info-backend.onrender.com";
+
 export default function PatientFormPage() {
   const socketRef = useRef<Socket | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -100,7 +103,7 @@ export default function PatientFormPage() {
    
     try {
       // change this URL if your socket server runs elsewhere
-      socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
+      socketRef.current = io(SOCKET_URL, {
         transports: ["websocket", "polling"],
         reconnectionAttempts: 5,
       });

@@ -1,6 +1,6 @@
 const http = require('http');
 const { Server } = require('socket.io');
-const PORT = process.env.SOCKET_PORT || 4000;
+const PORT = process.env.PORT || process.env.SOCKET_PORT || 4000;
 
 const server = http.createServer();
 const io = new Server(server, {
@@ -16,19 +16,27 @@ const socketSessionMap = new Map();
 
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
+    console.log('Socket connected:', socket.id, 'handshake:', {
+      origin: socket.handshake.headers.origin,
+      referer: socket.handshake.headers.referer,
+      host: socket.handshake.headers.host,
+    });
 
   socket.on('new-patient', (data) => {
     console.log('Received new-patient event:', data?.firstName || '<no-name>');
-    // broadcast to all connected clients (including sender)
     io.emit('new-patient', data);
   });
 
-  // Presence events from clients who are filling the form
+    // ping test event for diagnostics
+    socket.on('ping-test', (payload) => {
+      console.log('ping-test from', socket.id, payload || {});
+      socket.emit('pong-test', { ok: true, timestamp: Date.now() });
+    });
+
   socket.on('form-active', (payload) => {
     try {
       if (payload && payload.sessionId) socketSessionMap.set(socket.id, payload.sessionId);
     } catch (e) {}
-    // forward to everyone (admin pages will listen)
     io.emit('form-active', payload);
   });
 
@@ -56,7 +64,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const sessionId = socketSessionMap.get(socket.id);
     if (sessionId) {
-      // notify others that this session left
       io.emit('form-left', { sessionId, timestamp: Date.now() });
       socketSessionMap.delete(socket.id);
     }

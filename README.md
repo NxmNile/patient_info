@@ -34,16 +34,20 @@ npm install
 ```
 
 ### Start the Socket.IO Server
-In a first terminal:
+By default the app points to the hosted socket server at `https://patient-info-backend.onrender.com`. You can override it with `NEXT_PUBLIC_SOCKET_URL` if you want to run your own:
+
+```bash
+NEXT_PUBLIC_SOCKET_URL=http://localhost:4000 npm run dev
+```
+
+If you need a local server, start it in another terminal:
 
 ```bash
 npm run socket
 ```
 
-The server listens on port 4000 by default.
-
 ### Start the Next.js App
-In another terminal:
+In another terminal (or the same one if you are only using the hosted socket server):
 
 ```bash
 npm run dev
