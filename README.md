@@ -28,4 +28,3 @@ Hospital staff can access a dedicated dashboard to monitor real-time patient int
 ## How to run the project
 - open https://patient-info-theta.vercel.app/ 2 tabs
 - First tab for patient and second tabs for admin
-- For admin login, Username: admin Password: admin 123
