@@ -21,10 +21,3 @@ Hospital staff can access a dedicated dashboard to monitor real-time patient int
 - Table of submitted patient records with timestamps
 - Patient search by name for efficient navigation through records
 
-**For backend repository**
-- https://github.com/NxmNile/patient-info-backend
-- Deploy on Render
-
-## How to run the project
-- open https://patient-info-theta.vercel.app/ 2 tabs
-- First tab for patient and second tabs for admin
