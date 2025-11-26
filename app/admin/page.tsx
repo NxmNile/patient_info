@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CiSearch } from "react-icons/ci";
 
 const SOCKET_URL =
-  (process.env.NEXT_PUBLIC_SOCKET_URL ?? "").trim() || "https://patient-info-backend.onrender.com";
+   "https://patient-info-backend.onrender.com";
 export default function AdminPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);

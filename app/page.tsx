@@ -4,7 +4,7 @@ import { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
 const SOCKET_URL =
-  (process.env.NEXT_PUBLIC_SOCKET_URL ?? "").trim() || "https://patient-info-backend.onrender.com";
+  "https://patient-info-backend.onrender.com";
 
 export default function PatientFormPage() {
   const socketRef = useRef<Socket | null>(null);
